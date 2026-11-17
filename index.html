@@ -1,0 +1,841 @@
+
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>VØQ CREATOR | AI Photo Studio</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;700&family=Noto+Serif+JP&family=Zen+Maru+Gothic&family=Kiwi+Maru&family=Yomogi&family=Kaisei+Decol&family=Playfair+Display:ital@0;1&family=Montserrat:wght@400;700&family=Pacifico&family=Caveat&family=Great+Vibes&family=Space+Mono&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box}
+:root{--ink:#302b30;--pink:#a66e8c;--line:#eadfe5;--bg:#faf7f8}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:"Noto Sans JP",sans-serif}
+header{padding:19px;text-align:center;background:white;border-bottom:1px solid var(--line)}
+.logo{font:700 25px Georgia,serif;letter-spacing:4px}
+header small{display:block;color:var(--pink);letter-spacing:3px;font-size:10px;margin-top:6px}
+main{max-width:1160px;margin:auto;padding:22px 13px 70px}
+h1{text-align:center;font:normal clamp(29px,5vw,46px) Georgia,serif}
+.subtitle{text-align:center;color:#8c818a;font-size:12px;margin-bottom:28px}
+.layout{display:grid;grid-template-columns:minmax(0,1fr) 360px;gap:17px;align-items:start}
+.panel{background:white;border:1px solid var(--line);border-radius:16px;overflow:hidden;margin-bottom:16px}
+.panel h2{font-size:13px;letter-spacing:1px;padding:17px;margin:0;border-bottom:1px solid var(--line)}
+.pad{padding:16px}
+button{border:1px solid var(--line);background:white;color:var(--ink);padding:10px 12px;border-radius:9px;font:inherit;font-size:12px;cursor:pointer}
+button.active{background:#f8eaf1;border-color:var(--pink)}
+button.primary{background:var(--ink);color:white;border-color:var(--ink)}
+button:disabled{opacity:.5}
+.buttons{display:flex;flex-wrap:wrap;gap:7px}
+.buttons button{flex:1}
+input,select,textarea{font:inherit}
+select,textarea,input[type=text],input[type=url]{width:100%;border:1px solid var(--line);border-radius:9px;padding:11px;background:white;font-size:12px}
+textarea{min-height:75px;resize:vertical}
+input[type=range]{width:100%;accent-color:var(--pink)}
+label{display:block;font-size:11px;color:#8c818a;margin:13px 0 6px}
+small,.hint{font-size:11px;color:#8c818a;line-height:1.7}
+.upload{display:block;text-align:center;padding:20px;border:1px dashed var(--pink);border-radius:10px;cursor:pointer;background:#fdf9fb}
+.upload input{display:none}
+#preview{position:relative;width:100%;max-width:440px;margin:auto;aspect-ratio:9/16;background:#eee8ec;overflow:hidden;touch-action:none;border-radius:9px}
+#canvas{display:block;width:100%;height:100%;pointer-events:none}
+.overlay{position:absolute;transform:translate(-50%,-50%);white-space:pre-wrap;overflow-wrap:anywhere;max-width:92%;text-align:center;line-height:1.25;touch-action:none;user-select:none;cursor:grab;text-shadow:0 2px 7px #0006;padding:4px;border:1px dashed transparent}
+.overlay.selected{border-color:white;background:#0002}
+#thumbs{display:flex;overflow:auto;gap:7px;margin-top:10px}
+.thumb{width:62px;height:70px;flex:none;padding:2px;overflow:hidden}
+.thumb img{width:100%;height:100%;object-fit:cover}
+#fonts{display:grid;grid-template-columns:1fr 1fr;gap:7px;max-height:270px;overflow:auto}
+.font{min-height:65px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px}
+.font span{font-size:18px}
+.font small{font-size:9px}
+.chips{display:flex;gap:6px;flex-wrap:wrap}
+.chips button{font-weight:400}
+#suggestions{display:grid;gap:11px}
+.suggestion{padding:13px;border:1px solid var(--line);border-radius:11px;background:#fff}
+.suggestion strong{font-size:12px}
+.suggestion p{font-size:12px;line-height:1.8;white-space:pre-wrap;overflow-wrap:anywhere}
+.suggestion small{display:block;margin-bottom:9px}
+.resultTitle{font-size:12px;font-weight:700;margin:13px 0 7px}
+#analysis{background:#faf3f7;border-radius:10px;padding:13px;font-size:12px;line-height:1.8;white-space:pre-wrap}
+#layers{display:grid;gap:6px;margin-top:9px}
+.layerItem{display:flex;align-items:center;gap:6px;border:1px solid var(--line);padding:7px;border-radius:8px}
+.layerItem span{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:11px}
+.row{display:flex;gap:9px;align-items:center}
+.row>*{flex:1;min-width:0}
+#status{font-size:12px;line-height:1.7;color:#805b70}
+@media(max-width:820px){.layout{grid-template-columns:1fr}.pad{padding:12px}main{padding:14px 10px 50px}}
+</style>
+</head>
+<body>
+<header>
+ <div class="logo">VØQ CREATOR</div>
+ <small>AI PHOTO STUDIO</small>
+</header>
+<main>
+<h1>Create your vibe.</h1>
+<p class="subtitle">写真編集と音楽セレクト。AIで言葉・フォントも提案。</p>
+<div class="layout">
+<div>
+<section class="panel">
+<h2>PHOTO STUDIO</h2>
+<div class="pad">
+<div id="preview"><canvas id="canvas"></canvas></div>
+<div class="buttons" style="margin-top:12px" id="ratios">
+<button data-ratio="story" class="active">Story 9:16</button>
+<button data-ratio="post">Post 4:5</button>
+<button data-ratio="square">Square 1:1</button>
+</div>
+<div class="buttons" style="margin-top:9px">
+<button id="reset">文字をリセット</button>
+<button class="primary" id="save">画像を保存</button>
+</div>
+<p class="hint">文字・絵文字は写真上で指を使って移動できます。</p>
+</div>
+</section>
+
+<section class="panel">
+<h2>AI PHOTO ANALYSIS</h2>
+<div class="pad">
+<p class="hint">写真をAIで分析し、文章・フォントを提案します。音楽は下のMUSIC MATCHで、AI接続なしで選べます。</p>
+<label>追加の希望（任意）</label>
+<input type="text" id="instruction" maxlength="180" placeholder="例：大人っぽい、韓国風、切ない雰囲気">
+<button class="primary" id="analyze" style="width:100%;margin-top:13px">AIに写真を分析してもらう</button>
+<p id="status" aria-live="polite"></p>
+<div id="analysis" hidden></div>
+<div id="suggestions"></div>
+</div>
+</section>
+<section class="panel" id="musicMatch">
+<h2>VØQ MUSIC MATCH / 曲を選ぶ</h2>
+<div class="pad">
+<p class="hint">外部API・写真分析なし。ジャンルと雰囲気を選ぶだけで、登録済みの曲をおすすめします。</p>
+<label for="musicGenre">音楽ジャンル</label>
+<select id="musicGenre"></select>
+<label for="musicMood">写真・投稿の雰囲気</label>
+<select id="musicMood"></select>
+<div class="buttons" style="margin-top:12px">
+<button class="primary" id="recommendMusic">おすすめ曲を表示</button>
+<button id="moreMusic">別の候補を見る</button>
+</div>
+<p class="hint" id="musicStatus" aria-live="polite"></p>
+<div id="musicResults"></div>
+</div>
+</section>
+</div>
+
+<div>
+<section class="panel">
+<h2>01 / PHOTO</h2>
+<div class="pad">
+<label class="upload">＋ 写真を追加（最大10枚）
+<input type="file" id="files" accept="image/*" multiple>
+</label>
+<div id="thumbs"></div>
+<p class="hint">AI分析は現在選択している写真を対象にします。</p>
+</div>
+</section>
+
+<section class="panel">
+<h2>02 / FILTER</h2>
+<div class="pad">
+<div class="buttons" id="filters"></div>
+<label>明るさ <span id="brightnessValue">100%</span></label>
+<input type="range" id="brightness" min="50" max="150" value="100">
+<label>彩度 <span id="saturationValue">100%</span></label>
+<input type="range" id="saturation" min="0" max="200" value="100">
+<label>コントラスト <span id="contrastValue">100%</span></label>
+<input type="range" id="contrast" min="50" max="160" value="100">
+</div>
+</section>
+
+<section class="panel">
+<h2>03 / TEXT & EMOJI</h2>
+<div class="pad">
+<textarea id="newText" placeholder="今日のきろく 🫧🤍"></textarea>
+<button class="primary" id="addText" style="width:100%;margin-top:8px">＋ 文字を追加</button>
+<label>絵文字・記号</label>
+<div class="chips" id="emojis"></div>
+</div>
+</section>
+
+<section class="panel">
+<h2>04 / FONTS</h2>
+<div class="pad">
+<p class="hint">文字を選んでからフォントを変更できます。AIおすすめフォントもここに反映されます。</p>
+<div id="fonts"></div>
+</div>
+</section>
+
+<section class="panel">
+<h2>05 / EDIT SELECTED ITEM</h2>
+<div class="pad">
+<textarea id="editText" placeholder="編集する文字を選択"></textarea>
+<div class="row">
+<div><label>文字色</label><input type="color" id="color" value="#ffffff"></div>
+<div><label>サイズ <span id="sizeValue">32</span></label><input type="range" id="size" min="12" max="100" value="32"></div>
+</div>
+<label>回転 <span id="rotationValue">0°</span></label>
+<input type="range" id="rotation" min="-180" max="180" value="0">
+<div class="buttons" style="margin-top:12px">
+<button id="duplicate">複製</button>
+<button id="remove">削除</button>
+</div>
+<label>レイヤー一覧</label>
+<div id="layers"></div>
+</div>
+</section>
+</div>
+</div>
+</main>
+<script>
+"use strict";
+
+/*
+  Cloudflare Workerを公開したら
+  以下のURLだけ書き換えてください。
+*/
+const AI_ENDPOINT="https://voq-creator-ai.mionfujimoto.workers.dev";
+
+const $=id=>document.getElementById(id);
+const canvas=$("canvas"),ctx=canvas.getContext("2d");
+const preview=$("preview");
+
+const dimensions={
+ story:[1080,1920],
+ post:[1080,1350],
+ square:[1080,1080]
+};
+const filterDefs={
+ Natural:"none",
+ Korean:"brightness(1.1) saturate(.83) contrast(.94)",
+ American:"brightness(1.04) saturate(1.28) contrast(1.14)",
+ Vintage:"sepia(.25) saturate(.78) contrast(.95)",
+ Film:"sepia(.12) contrast(1.14) saturate(.88)",
+ Mono:"grayscale(1) contrast(1.12)"
+};
+const fontDefs=[
+ ["Noto Sans JP","日本語ゴシック","今日のきろく"],
+ ["Noto Serif JP","日本語明朝","今日のきろく"],
+ ["Zen Maru Gothic","日本語丸文字","今日のきろく"],
+ ["Kiwi Maru","かわいい日本語","今日のきろく"],
+ ["Yomogi","日本語手書き","今日のきろく"],
+ ["Kaisei Decol","デザイン明朝","今日のきろく"],
+ ["Playfair Display","Elegant","your moment"],
+ ["Montserrat","Modern","YOUR MOMENT"],
+ ["Pacifico","Script","your moment"],
+ ["Caveat","Handwriting","your moment"],
+ ["Great Vibes","Calligraphy","Your Moment"],
+ ["Space Mono","Typewriter","your moment"]
+];
+const genreNames=[
+ "R&B","K-POP","J-POP","日本語ラップ",
+ "HIP-HOP","洋楽 POP","CHILL","インディー","シティポップ"
+];
+const emojiNames=[
+ "🤍","🩷","🎀","✨","🫧","🌸","🌷","🪽",
+ "🦋","🌙","☁️","🪩","🎧","🍒","🧸","💌",
+ "♡","✦","✧","୨୧","ʚɞ","ෆ","⋆｡˚","✿"
+];
+
+const state={
+ photos:[],photoIndex:-1,ratio:"story",filter:"Natural",
+ brightness:100,saturation:100,contrast:100,
+ layers:[],selected:null,nextId:1,
+ genres:new Set(["R&B"])
+};
+
+let dragging=null;
+
+function currentPhoto(){
+ return state.photos[state.photoIndex]||null;
+}
+function selectedLayer(){
+ return state.layers.find(x=>x.id===state.selected)||null;
+}
+function clamp(x,min,max){return Math.max(min,Math.min(max,x));}
+function notify(message){$("status").textContent=message;}
+
+function button(text,action,extraClass=""){
+ const b=document.createElement("button");
+ b.textContent=text;
+ b.className=extraClass;
+ b.addEventListener("click",action);
+ return b;
+}
+
+function imageCover(context,image,w,h){
+ const scale=Math.max(w/image.width,h/image.height);
+ const sw=w/scale,sh=h/scale;
+ context.drawImage(image,(image.width-sw)/2,
+  (image.height-sh)/2,sw,sh,0,0,w,h);
+}
+
+function background(context,w,h){
+ context.save();
+ context.fillStyle="#eee8ec";
+ context.fillRect(0,0,w,h);
+ const photo=currentPhoto();
+ if(photo){
+  context.filter=[
+   filterDefs[state.filter],
+   `brightness(${state.brightness/100})`,
+   `saturate(${state.saturation/100})`,
+   `contrast(${state.contrast/100})`
+  ].join(" ");
+  imageCover(context,photo.image,w,h);
+ }
+ context.restore();
+}
+
+function wrapText(context,text,maxWidth){
+ const result=[];
+ for(const paragraph of text.split("\n")){
+  let line="";
+  for(const character of Array.from(paragraph)){
+   if(line&&context.measureText(line+character).width>maxWidth){
+    result.push(line);
+    line=character;
+   }else line+=character;
+  }
+  result.push(line);
+ }
+ return result;
+}
+
+function drawText(context,layer,w,h){
+ const fontSize=layer.size*w/390;
+ context.save();
+ context.translate(layer.x*w,layer.y*h);
+ context.rotate(layer.rotation*Math.PI/180);
+ context.fillStyle=layer.color;
+ context.textAlign="center";
+ context.textBaseline="middle";
+ context.font=`${fontSize}px "${layer.font}",sans-serif`;
+ context.shadowColor="#0006";
+ context.shadowBlur=fontSize*.12;
+ const lines=wrapText(context,layer.text,w*.86);
+ const lineHeight=fontSize*1.25;
+ lines.forEach((line,i)=>{
+  context.fillText(line,0,(i-(lines.length-1)/2)*lineHeight);
+ });
+ context.restore();
+}
+
+function render(){
+ const [w,h]=dimensions[state.ratio];
+ if(canvas.width!==w||canvas.height!==h){
+  canvas.width=w;canvas.height=h;
+ }
+ background(ctx,w,h);
+ renderOverlays();
+}
+
+function renderOverlays(){
+ preview.querySelectorAll(".overlay").forEach(x=>x.remove());
+ const width=preview.clientWidth||390;
+ for(const layer of state.layers){
+  const div=document.createElement("div");
+  div.className="overlay"+(layer.id===state.selected?" selected":"");
+  div.dataset.id=layer.id;
+  div.textContent=layer.text;
+  div.style.left=layer.x*100+"%";
+  div.style.top=layer.y*100+"%";
+  div.style.fontSize=layer.size*width/390+"px";
+  div.style.fontFamily=`"${layer.font}",sans-serif`;
+  div.style.color=layer.color;
+  div.style.transform=
+   `translate(-50%,-50%) rotate(${layer.rotation}deg)`;
+  div.addEventListener("pointerdown",e=>{
+   selectLayer(layer.id);
+   dragging={id:layer.id,element:div};
+   div.setPointerCapture(e.pointerId);
+   e.preventDefault();
+  });
+  div.addEventListener("pointermove",e=>{
+   if(!dragging||dragging.id!==layer.id)return;
+   const rect=preview.getBoundingClientRect();
+   layer.x=clamp((e.clientX-rect.left)/rect.width,.04,.96);
+   layer.y=clamp((e.clientY-rect.top)/rect.height,.04,.96);
+   div.style.left=layer.x*100+"%";
+   div.style.top=layer.y*100+"%";
+  });
+  div.addEventListener("pointerup",()=>dragging=null);
+  div.addEventListener("pointercancel",()=>dragging=null);
+  preview.append(div);
+ }
+}
+
+function addLayer(text,font="Noto Sans JP"){
+ if(!text.trim())return;
+ const layer={
+  id:state.nextId++,text,font,color:"#ffffff",
+  size:32,rotation:0,x:.5,y:.5
+ };
+ state.layers.push(layer);
+ selectLayer(layer.id);
+}
+
+function selectLayer(id){
+ state.selected=id;
+ const layer=selectedLayer();
+ $("editText").value=layer?.text||"";
+ $("color").value=layer?.color||"#ffffff";
+ $("size").value=layer?.size||32;
+ $("sizeValue").textContent=layer?.size||32;
+ $("rotation").value=layer?.rotation||0;
+ $("rotationValue").textContent=(layer?.rotation||0)+"°";
+ document.querySelectorAll(".font").forEach(b=>{
+  b.classList.toggle("active",b.dataset.font===layer?.font);
+ });
+ updateLayers();
+ renderOverlays();
+}
+
+function updateLayers(){
+ const list=$("layers");
+ list.replaceChildren();
+ for(const layer of [...state.layers].reverse()){
+  const row=document.createElement("div");
+  row.className="layerItem";
+  const label=document.createElement("span");
+  label.textContent=layer.text;
+  row.append(label,button("選択",()=>selectLayer(layer.id)));
+  row.append(button("↑",()=>{
+   const index=state.layers.findIndex(x=>x.id===layer.id);
+   if(index<state.layers.length-1){
+    [state.layers[index],state.layers[index+1]]=
+    [state.layers[index+1],state.layers[index]];
+    updateLayers();renderOverlays();
+   }
+  }));
+  list.append(row);
+ }
+}
+
+/* PHOTO UPLOAD */
+
+async function loadImage(file){
+ return new Promise((resolve,reject)=>{
+  const url=URL.createObjectURL(file);
+  const image=new Image();
+  image.onload=()=>{
+   // Thumbnail is generated before releasing the object URL.
+   const thumb=document.createElement("canvas");
+   thumb.width=120;thumb.height=140;
+   imageCover(thumb.getContext("2d"),image,120,140);
+   const thumbnail=thumb.toDataURL("image/jpeg",.75);
+   URL.revokeObjectURL(url);
+   resolve({image,thumbnail,name:file.name});
+  };
+  image.onerror=()=>{
+   URL.revokeObjectURL(url);
+   reject(new Error("画像を開けませんでした"));
+  };
+  image.src=url;
+ });
+}
+
+$("files").addEventListener("change",async e=>{
+ const remaining=10-state.photos.length;
+ if(remaining<=0){notify("最大10枚までです");return;}
+ let added=0;
+ for(const file of Array.from(e.target.files).slice(0,remaining)){
+  try{
+   if(!file.type.startsWith("image/"))continue;
+   state.photos.push(await loadImage(file));
+   added++;
+  }catch(err){console.error(err);}
+ }
+ if(added){
+  state.photoIndex=state.photos.length-1;
+  updateThumbs();render();
+  notify(added+"枚の写真を追加しました");
+ }else notify("画像を読み込めませんでした");
+ e.target.value="";
+});
+
+function updateThumbs(){
+ const box=$("thumbs");
+ box.replaceChildren();
+ state.photos.forEach((photo,index)=>{
+  const b=button("",()=>{
+   state.photoIndex=index;
+   updateThumbs();render();
+   $("analysis").hidden=true;
+   $("suggestions").replaceChildren();
+  },"thumb"+(index===state.photoIndex?" active":""));
+  const img=document.createElement("img");
+  img.src=photo.thumbnail;
+  img.alt=photo.name;
+  b.append(img);box.append(b);
+ });
+}
+
+/* FILTERS AND RATIOS */
+
+for(const name of Object.keys(filterDefs)){
+ const b=button(name,()=>{
+  state.filter=name;
+  document.querySelectorAll("#filters button").forEach(x=>
+   x.classList.toggle("active",x===b));
+  render();
+ },name==="Natural"?"active":"");
+ $("filters").append(b);
+}
+
+document.querySelectorAll("[data-ratio]").forEach(b=>{
+ b.addEventListener("click",()=>{
+  state.ratio=b.dataset.ratio;
+  const [w,h]=dimensions[state.ratio];
+  preview.style.aspectRatio=w+"/"+h;
+  document.querySelectorAll("[data-ratio]").forEach(x=>
+   x.classList.toggle("active",x===b));
+  render();
+ });
+});
+
+for(const id of ["brightness","saturation","contrast"]){
+ $(id).addEventListener("input",e=>{
+  state[id]=Number(e.target.value);
+  $(id+"Value").textContent=state[id]+"%";
+  render();
+ });
+}
+
+/* FONTS, EMOJIS, TEXT */
+
+for(const [family,label,sample] of fontDefs){
+ const b=button("",()=>{
+  const layer=selectedLayer();
+  if(!layer){notify("先に文字を選択してください");return;}
+  layer.font=family;
+  selectLayer(layer.id);
+ },"font");
+ b.dataset.font=family;
+ const example=document.createElement("span");
+ example.textContent=sample;
+ example.style.fontFamily=`"${family}",sans-serif`;
+ const caption=document.createElement("small");
+ caption.textContent=label;
+ b.append(example,caption);
+ $("fonts").append(b);
+}
+
+for(const emoji of emojiNames){
+ $("emojis").append(button(emoji,()=>addLayer(emoji)));
+}
+
+$("addText").addEventListener("click",()=>{
+ if(!$("newText").value.trim())return;
+ addLayer($("newText").value);
+ $("newText").value="";
+});
+
+$("editText").addEventListener("input",e=>{
+ const layer=selectedLayer();
+ if(!layer)return;
+ layer.text=e.target.value;
+ updateLayers();renderOverlays();
+});
+
+$("color").addEventListener("input",e=>{
+ const layer=selectedLayer();
+ if(!layer)return;
+ layer.color=e.target.value;
+ renderOverlays();
+});
+
+for(const [id,key] of [["size","size"],["rotation","rotation"]]){
+ $(id).addEventListener("input",e=>{
+  const layer=selectedLayer();
+  if(!layer)return;
+  layer[key]=Number(e.target.value);
+  $(id+"Value").textContent=layer[key]+(id==="rotation"?"°":"");
+  renderOverlays();
+ });
+}
+
+$("duplicate").addEventListener("click",()=>{
+ const layer=selectedLayer();
+ if(!layer)return;
+ const copy={
+  ...layer,id:state.nextId++,
+  x:clamp(layer.x+.06,.04,.96),
+  y:clamp(layer.y+.06,.04,.96)
+ };
+ state.layers.push(copy);
+ selectLayer(copy.id);
+});
+
+$("remove").addEventListener("click",()=>{
+ state.layers=state.layers.filter(x=>x.id!==state.selected);
+ selectLayer(null);
+});
+
+$("reset").addEventListener("click",()=>{
+ state.layers=[];
+ selectLayer(null);
+ render();
+});
+
+/* OFFLINE MUSIC MATCH — no API requests, no audio playback */
+const musicLibrary = [
+ {g:"R&B",t:"Snooze",a:"SZA",m:["エモい","夜っぽい","切ない"]},
+ {g:"R&B",t:"Best Part",a:"Daniel Caesar feat. H.E.R.",m:["エモい","恋愛","落ち着く"]},
+ {g:"R&B",t:"Pink + White",a:"Frank Ocean",m:["エモい","おしゃれ","明るい"]},
+ {g:"R&B",t:"Get You",a:"Daniel Caesar feat. Kali Uchis",m:["エモい","恋愛","夜っぽい"]},
+ {g:"R&B",t:"Focus",a:"H.E.R.",m:["エモい","切ない","夜っぽい"]},
+ {g:"R&B",t:"Good Days",a:"SZA",m:["エモい","落ち着く","明るい"]},
+ {g:"R&B",t:"Japanese Denim",a:"Daniel Caesar",m:["エモい","落ち着く","恋愛"]},
+ {g:"R&B",t:"Come Through",a:"H.E.R. feat. Chris Brown",m:["エモい","夜っぽい","恋愛"]},
+ {g:"K-POP",t:"Ditto",a:"NewJeans",m:["エモい","切ない","かわいい"]},
+ {g:"K-POP",t:"Love Lee",a:"AKMU",m:["かわいい","明るい","恋愛"]},
+ {g:"K-POP",t:"Hype Boy",a:"NewJeans",m:["明るい","かわいい","おしゃれ"]},
+ {g:"K-POP",t:"ONLY",a:"LeeHi",m:["エモい","恋愛","落ち着く"]},
+ {g:"K-POP",t:"Instagram",a:"DEAN",m:["夜っぽい","エモい","おしゃれ"]},
+ {g:"J-POP",t:"花束",a:"back number",m:["恋愛","エモい","切ない"]},
+ {g:"J-POP",t:"ドライフラワー",a:"優里",m:["切ない","エモい","恋愛"]},
+ {g:"J-POP",t:"怪獣の花唄",a:"Vaundy",m:["明るい","エモい","おしゃれ"]},
+ {g:"J-POP",t:"なんでもないよ、",a:"マカロニえんぴつ",m:["恋愛","エモい","落ち着く"]},
+ {g:"日本語ラップ",t:"のびしろ",a:"Creepy Nuts",m:["明るい","おしゃれ","エモい"]},
+ {g:"日本語ラップ",t:"Bling-Bang-Bang-Born",a:"Creepy Nuts",m:["明るい","おしゃれ"]},
+ {g:"日本語ラップ",t:"My Resort",a:"¥ellow Bucks",m:["おしゃれ","夜っぽい"]},
+ {g:"HIP-HOP",t:"LOVE.",a:"Kendrick Lamar feat. Zacari",m:["恋愛","エモい","夜っぽい"]},
+ {g:"HIP-HOP",t:"SICKO MODE",a:"Travis Scott",m:["夜っぽい","おしゃれ"]},
+ {g:"HIP-HOP",t:"Sunflower",a:"Post Malone & Swae Lee",m:["明るい","エモい","おしゃれ"]},
+ {g:"洋楽 POP",t:"golden hour",a:"JVKE",m:["エモい","恋愛","明るい"]},
+ {g:"洋楽 POP",t:"Until I Found You",a:"Stephen Sanchez",m:["恋愛","エモい","切ない"]},
+ {g:"洋楽 POP",t:"Cruel Summer",a:"Taylor Swift",m:["明るい","恋愛","おしゃれ"]},
+ {g:"洋楽 POP",t:"Ocean Eyes",a:"Billie Eilish",m:["エモい","切ない","落ち着く"]},
+ {g:"CHILL",t:"Sunset Lover",a:"Petit Biscuit",m:["エモい","落ち着く","おしゃれ"]},
+ {g:"CHILL",t:"Show Me How",a:"Men I Trust",m:["落ち着く","エモい","夜っぽい"]},
+ {g:"CHILL",t:"Space Song",a:"Beach House",m:["エモい","夜っぽい","切ない"]},
+ {g:"インディー",t:"Nothing's Gonna Hurt You Baby",a:"Cigarettes After Sex",m:["エモい","恋愛","夜っぽい"]},
+ {g:"インディー",t:"Apocalypse",a:"Cigarettes After Sex",m:["エモい","切ない","夜っぽい"]},
+ {g:"インディー",t:"Glue Song",a:"beabadoobee",m:["かわいい","恋愛","落ち着く"]},
+ {g:"シティポップ",t:"プラスティック・ラブ",a:"竹内まりや",m:["夜っぽい","エモい","おしゃれ"]},
+ {g:"シティポップ",t:"真夜中のドア〜stay with me",a:"松原みき",m:["夜っぽい","エモい","切ない"]},
+ {g:"シティポップ",t:"4:00 A.M.",a:"大貫妙子",m:["夜っぽい","落ち着く","おしゃれ"]}
+];
+const musicMoods=["エモい","おしゃれ","かわいい","夜っぽい","明るい","切ない","恋愛","落ち着く"];
+for(const genre of genreNames){
+ const option=document.createElement("option");
+ option.value=genre;option.textContent=genre;
+ $("musicGenre").append(option);
+}
+for(const mood of musicMoods){
+ const option=document.createElement("option");
+ option.value=mood;option.textContent=mood;
+ $("musicMood").append(option);
+}
+let musicOffset=0;
+function recommendMusic(){
+ const genre=$("musicGenre").value;
+ const mood=$("musicMood").value;
+ const tracks=musicLibrary.filter(x=>x.g===genre);
+ const ordered=[...tracks].sort((a,b)=>Number(b.m.includes(mood))-Number(a.m.includes(mood)));
+ const results=$("musicResults");
+ results.replaceChildren();
+ const count=Math.min(5,ordered.length);
+ if(!count){$("musicStatus").textContent="このジャンルにはまだ登録曲がありません";return;}
+ for(let i=0;i<count;i++){
+  const song=ordered[(i+musicOffset)%ordered.length];
+  const search=`${song.t} ${song.a}`;
+  const reason=song.m.includes(mood)?`「${mood}」の雰囲気におすすめ`:`${genre}からの追加候補`;
+  results.append(suggestionCard(song.t,song.a,reason,[
+   ["Instagram検索用にコピー",()=>copyText(search)]
+  ]));
+ }
+ $("musicStatus").textContent=`${genre} × ${mood}｜${count}曲を表示。Instagramの音源ライブラリで利用可能かは検索して確認してください。`;
+}
+$("recommendMusic").addEventListener("click",()=>{musicOffset=0;recommendMusic();});
+$("moreMusic").addEventListener("click",()=>{musicOffset++;recommendMusic();});
+$("musicGenre").addEventListener("change",()=>{musicOffset=0;recommendMusic();});
+$("musicMood").addEventListener("change",()=>{musicOffset=0;recommendMusic();});
+recommendMusic();
+
+/* AI ANALYSIS */
+
+async function preparePhoto(){
+ const photo=currentPhoto();
+ const c=document.createElement("canvas");
+ const maxSide=1024;
+ const scale=Math.min(1,maxSide/Math.max(
+  photo.image.width,photo.image.height
+ ));
+ c.width=Math.round(photo.image.width*scale);
+ c.height=Math.round(photo.image.height*scale);
+ c.getContext("2d").drawImage(photo.image,0,0,c.width,c.height);
+ return c.toDataURL("image/jpeg",.78);
+}
+
+async function copyText(text){
+ try{
+  await navigator.clipboard.writeText(text);
+  notify("コピーしました");
+ }catch(e){
+  const area=document.createElement("textarea");
+  area.value=text;
+  document.body.append(area);
+  area.select();
+  const ok=document.execCommand("copy");
+  area.remove();
+  notify(ok?"コピーしました":"コピーできませんでした");
+ }
+}
+
+function suggestionCard(title,detail,reason,actions){
+ const card=document.createElement("div");
+ card.className="suggestion";
+ const h=document.createElement("strong");
+ h.textContent=title;
+ const p=document.createElement("p");
+ p.textContent=detail;
+ const why=document.createElement("small");
+ why.textContent=reason||"";
+ const buttons=document.createElement("div");
+ buttons.className="buttons";
+ for(const [name,callback] of actions){
+  buttons.append(button(name,callback));
+ }
+ card.append(h,p,why,buttons);
+ return card;
+}
+
+function sectionTitle(text){
+ const div=document.createElement("div");
+ div.className="resultTitle";
+ div.textContent=text;
+ return div;
+}
+
+function showAIResult(data){
+ const analysis=$("analysis");
+ analysis.hidden=false;
+ analysis.textContent=
+  "情景："+(data.scene||"")+"\n"+
+  "雰囲気："+(data.mood||"")+"\n"+
+  "考察："+(data.interpretation||"");
+
+ const box=$("suggestions");
+ box.replaceChildren();
+
+ box.append(sectionTitle("AIおすすめ文章・絵文字"));
+ for(const item of data.captions||[]){
+  const text=String(item.text||"");
+  const font=fontDefs.some(f=>f[0]===item.font)?
+   item.font:"Noto Sans JP";
+  box.append(suggestionCard(
+   item.language==="en"?"ENGLISH CAPTION":"JAPANESE CAPTION",
+   text,item.reason,[
+    ["写真に追加",()=>addLayer(text,font)],
+    ["コピー",()=>copyText(text)]
+   ]
+  ));
+ }
+
+ box.append(sectionTitle("AIおすすめフォント"));
+ for(const item of data.fonts||[]){
+  const family=item.name;
+  if(!fontDefs.some(f=>f[0]===family))continue;
+  box.append(suggestionCard(
+   family,item.example||"Your moment",
+   item.reason,[
+    ["選択中の文字に適用",()=>{
+     const layer=selectedLayer();
+     if(!layer){notify("先に文字を選択してください");return;}
+     layer.font=family;
+     selectLayer(layer.id);
+    }]
+   ]
+  ));
+ }
+
+
+}
+
+$("analyze").addEventListener("click",async()=>{
+ if(!currentPhoto()){
+  notify("先に写真をアップロードしてください");
+  return;
+ }
+ if(!AI_ENDPOINT.startsWith("https://")){
+  notify("AI接続先の設定がまだ完了していません");
+  return;
+ }
+ const b=$("analyze");
+ b.disabled=true;
+ b.textContent="AIが写真を考察中...";
+ notify("情景・感情・フォントを分析しています");
+
+ try{
+  const image=await preparePhoto();
+  const response=await fetch(AI_ENDPOINT,{
+   method:"POST",
+   headers:{"Content-Type":"application/json"},
+   body:JSON.stringify({
+    image,
+    genres:[],
+    instruction:$("instruction").value.trim()
+   })
+  });
+  const result=await response.json();
+  if(!response.ok){
+   throw new Error(result.error||"AIサーバーエラー");
+  }
+  showAIResult(result);
+  notify("AI分析が完了しました");
+ }catch(error){
+  console.error(error);
+  notify("AI分析に失敗しました："+error.message);
+ }finally{
+  b.disabled=false;
+  b.textContent="AIに写真を分析してもらう";
+ }
+});
+
+/* EXPORT */
+
+$("save").addEventListener("click",async()=>{
+ if(!currentPhoto()){
+  notify("先に写真を追加してください");
+  return;
+ }
+ const [w,h]=dimensions[state.ratio];
+ const out=document.createElement("canvas");
+ out.width=w;out.height=h;
+ const c=out.getContext("2d");
+
+ try{
+  const usedFonts=[...new Set(state.layers.map(x=>x.font))];
+  await Promise.all(usedFonts.map(font=>
+   document.fonts.load(`32px "${font}"`)
+  ));
+ }catch(e){console.warn("Font loading:",e);}
+
+ background(c,w,h);
+ state.layers.forEach(layer=>drawText(c,layer,w,h));
+
+ out.toBlob(async blob=>{
+  if(!blob){notify("画像保存に失敗しました");return;}
+  const file=new File([blob],"voq-creator.png",{type:"image/png"});
+  if(navigator.canShare?.({files:[file]})){
+   try{
+    await navigator.share({files:[file]});
+    return;
+   }catch(e){
+    if(e.name==="AbortError")return;
+   }
+  }
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement("a");
+  a.href=url;a.download="voq-creator.png";
+  document.body.append(a);a.click();a.remove();
+  setTimeout(()=>URL.revokeObjectURL(url),60000);
+  notify("画像を書き出しました");
+ },"image/png");
+});
+
+render();
+window.addEventListener("resize",renderOverlays);
+</script>
+</body>
+</html>
